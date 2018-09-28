@@ -1,17 +1,16 @@
 ---
-modx_version: 2.3.1-pl
+modx_base_version: 2.6.5
+modx_version: "{{ modx_base_version }}-pl"
 # get_url won't follow redirects, so we have to explicitly specify the download URL
-modx_download_url: http://modx.s3.amazonaws.com/releases/2.3.1/modx-2.3.1-pl.zip
-modx_install_dir: /var/www
+modx_download_url: "http://modx.s3.amazonaws.com/releases/{{ modx_base_version }}/modx-{{ modx_version }}.zip"
+modx_install_dir: /opt/modx
 
 modx_database_server: localhost
 modx_database_name: modx_modx
 modx_database_user: modx
-modx_database_password: wkc87kdo
 modx_table_prefix: modx_
 
 modx_admin_username: admin
-modx_admin_password: admin
-modx_admin_email: modx@example.com
+modx_admin_email: admin@meisterwerk.ventures
 
-modx_timezone: America/Los_Angeles
+modx_timezone: Europe/Berlin

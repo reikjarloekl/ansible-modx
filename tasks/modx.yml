@@ -1,25 +1,39 @@
 ---
+# tasks file for modx
+- name: Stop php-fpm Service
+  service: name=php7.0-fpm state=stopped
+  changed_when: false
+
+- name: Copy php-fpm pool configuration file for modx
+  template: src=modx.pool.conf dest=/etc/php/7.0/fpm/pool.d/modx.conf
+
+- name: Add group "modx"
+  group: name=modx
+
+- name: Add user "modx"
+  user: name=modx group=modx home=/home/modx/ shell=/bin/false
+
+- name: Create modx database
+  mysql_db: name={{ modx_database_name }} state=present
+
+- name: Create modx database user
+  mysql_user: name={{ modx_database_user }} password={{ modx_database_password }} priv={{ modx_database_name }}.*:ALL host='localhost' state=present
+
 - name: Install dependencies
   apt: pkg={{ item }} state=present
   with_items:
     - unzip
-    - php5-cli
-    - php5-fpm
-    - php5-json
-    - php5-gd
-    - php5-mysql
-    - php5-imagick
-    - php5-curl
-
-- name: Find PHP ini file
-  shell: php -i | grep 'Loaded Configuration File' | sed -e 's/[^\/]*\(\/.*\)$/\1/'
-  register: modx_php_ini_file
-
-- name: Configure PHP
-  replace: dest={{ modx_php_ini_file.stdout }} regexp='^;date.timezone =$' replace='date.timezone = {{ modx_timezone }}' backup=yes
+    - php-cli
+    - php-json
+    - php-gd
+    - php-imagick
 
 - name: Create installation directory
-  file: path={{ modx_install_dir }} state=directory
+  file: 
+    path: "{{ modx_install_dir }}"
+    state: directory
+    owner: modx
+    group: modx
 
 - name: Get MODX zipfile
   get_url: url={{modx_download_url}} dest={{ modx_install_dir }}/modx-{{ modx_version }}.zip
@@ -27,25 +41,28 @@
 
 - name: Unzip MODX
   command: unzip -o modx-{{ modx_version }}.zip
-  when: got_modx|changed
+  when: got_modx.changed
   args:
     chdir: "{{ modx_install_dir }}"
     creates: "{{ modx_install_dir }}/modx-{{ modx_version }}"
 
 - name: Configure MODX installation
   template: src=config.xml dest={{ modx_install_dir }}/modx-{{ modx_version }}/setup/config.xml
-  when: got_modx|changed
+  when: got_modx.changed
 
 - name: Touch blank config file
   file: path={{ modx_install_dir }}/modx-{{ modx_version }}/core/config/config.inc.php state=touch
-  when: got_modx|changed
+  when: got_modx.changed
 
 - name: Install MODX
   command: php ./index.php --installmode=new
-  when: got_modx|changed
+  when: got_modx.changed
   args:
     chdir: "{{ modx_install_dir }}/modx-{{ modx_version }}/setup/"
 
+- name: Start php-fpm Service
+  service: name=php7.0-fpm state=started enabled=yes    
+  changed_when: false
 
 - name: Clean up MODX installation
   file: path={{ modx_install_dir }}/modx-{{ modx_version }}/setup state=absent
