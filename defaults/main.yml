@@ -8,7 +8,7 @@ modx_install_dir: /opt/modx
 modx_database_server: localhost
 modx_database_name: modx_modx
 modx_database_user: modx
-modx_table_prefix: modx_
+modx_table_prefix: 
 
 modx_admin_username: admin
 modx_admin_email: admin@meisterwerk.ventures

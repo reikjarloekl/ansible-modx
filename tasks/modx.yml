@@ -1,5 +1,10 @@
 ---
 # tasks file for modx
+#
+# call ansible with variable aicura_dump defined to upload aicura.zip file and the SQL dump defined in aicura_dump
+# aicura.zip will be extracted into the base directory; Core-paths in config files will be adpated and cache cleared
+# SQL dump defined in aicura_dump will be loaded into modX database.
+# E.g. setting variable through command line: -e "aicura_dump=aicura_2018-09-27_14-16-24.sql"
 - name: Stop php-fpm Service
   service: name=php7.0-fpm state=stopped
   changed_when: false
@@ -27,6 +32,7 @@
     - php-json
     - php-gd
     - php-imagick
+    - php-mbstring
 
 - name: Create installation directory
   file: 
@@ -59,6 +65,45 @@
   when: got_modx.changed
   args:
     chdir: "{{ modx_install_dir }}/modx-{{ modx_version }}/setup/"
+
+- name: Unpacking aicura modx package from agency
+  unarchive: 
+    src: aicura.zip
+    dest: "{{ modx_install_dir }}/modx-{{ modx_version }}"
+    owner: modx
+    group: modx
+  when: aicura_dump is defined
+
+# Copy database dump file to remote host and restore it to database '{{ modx_database_name }}'
+- name: Copy aicura database dump file
+  copy:
+    src: "{{ aicura_dump }}"
+    dest: /tmp
+  when: aicura_dump is defined
+    
+- name: Restore aicura database dump
+  mysql_db:
+    name: "{{ modx_database_name }}"
+    state: import
+    target: "/tmp/{{ aicura_dump }}"    
+  when: aicura_dump is defined
+
+- name: Clear cache after restoring dump
+  file:
+    path: "{{ modx_install_dir }}/modx-{{ modx_version }}/core/cache"
+    state: absent
+  when: aicura_dump is defined
+
+- name: Adapting core path in modx config files
+  replace:
+    path: "{{ item }}"
+    regexp: "define\\s*\\('MODX_CORE_PATH'\\,\\s*'([^']*)'\\);"
+    replace: "define('MODX_CORE_PATH', '{{ modx_install_dir }}/modx-{{ modx_version }}/core/');"
+  with_items:
+    - "{{ modx_install_dir }}/modx-{{ modx_version }}/connectors/config.core.php"
+    - "{{ modx_install_dir }}/modx-{{ modx_version }}/config.core.php"
+    - "{{ modx_install_dir }}/modx-{{ modx_version }}/manager/config.core.php"
+  when: aicura_dump is defined
 
 - name: Start php-fpm Service
   service: name=php7.0-fpm state=started enabled=yes    
