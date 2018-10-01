@@ -1,0 +1,46 @@
+- name: Duply - Create profiles
+  file: path="/etc/duply/{{ item.profile }}"
+        mode=0700
+        owner=root
+        group=root
+        state=directory
+  with_items: "{{ modx_backup_profiles }}"
+
+- name: Duply - Configure backup
+  template: 
+    src: ../../duply/templates/duply.conf.j2 
+    dest: "/etc/duply/{{item.profile}}/conf" 
+    mode: "u=rw,g=,o="
+    owner: root
+    group: root
+  with_items: "{{ modx_backup_profiles }}"
+
+- name: Duply - Create pre scripts
+  template:
+    src: "{{ item.pre }}"
+    dest: "/etc/duply/{{ item.profile }}/pre"
+    mode: "u=rxw,g=,o="
+    owner: root
+    group: root
+  with_items: "{{ modx_backup_profiles }}"
+  when: item.pre is defined
+
+- name: Duply - Create post scripts
+  template:
+    src: "{{ item.post }}"
+    dest: "/etc/duply/{{ item.profile }}/post"
+    mode: "u=rxw,g=,o="
+    owner: root
+    group: root
+  with_items: "{{ modx_backup_profiles }}"
+  when: item.post is defined
+  
+- name: Duply - Create exclude file
+  template:
+    src: "{{ item.exclude }}"
+    dest: "/etc/duply/{{ item.profile }}/exclude"
+    mode: "u=rw,g=,o="
+    owner: root
+    group: root
+  with_items: "{{ modx_backup_profiles }}"
+  when: item.exclude is defined

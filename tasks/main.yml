@@ -1,4 +1,6 @@
 ---
 - include: modx.yml
 - include: nginx.yml
+- include: backup.yml
+  when: backup
 - include: cleanup.yml

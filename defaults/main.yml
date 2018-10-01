@@ -14,3 +14,13 @@ modx_admin_username: admin
 modx_admin_email: admin@meisterwerk.ventures
 
 modx_timezone: Europe/Berlin
+
+modx_backup_profiles:
+  - profile: 'modx-files'
+    src: "{{ modx_install_dir }}/modx-{{ modx_version }}"
+    exclude: duply.exclude.j2
+  - profile: 'modx-db'
+    src: '/tmp/modx-db-dump/'
+    pre: '../../duply/templates/db-dump.pre.j2'
+    post: '../../duply/templates/db-dump.post.j2'
+    db_name: "{{ modx_database_name }}"
