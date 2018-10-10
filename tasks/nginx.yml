@@ -2,6 +2,6 @@
 - name: Change MODX file ownership
   file: path={{ modx_install_dir }}/modx-{{ modx_version }} recurse=yes owner=modx group=modx
 
-- name: Make MODX site available
+- name: Write nginx configuration
   template: src=nginx.conf dest=/etc/nginx/conf.d/modx.conf mode=644
   notify: restart nginx
